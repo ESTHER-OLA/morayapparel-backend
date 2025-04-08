@@ -5,15 +5,15 @@ const {
   getAllOrders,
   updateOrderStatus,
   getNotifications,
-} = require("../controllers/orderController");
-const authMiddleware = require("../middleware/authMiddleware");
-const adminAuth = require("../middleware/adminAuth");
+} = require("../controllers/OrderController");
+const { authMiddlewares } = require("../middlewares/authMiddlewares");
+const adminAuth = require("../middlewares/adminAuth");
 
 const router = express.Router();
 
 // User routes
-router.post("/place", authMiddleware, placeOrder);
-router.get("/user-orders", authMiddleware, getUserOrders);
+router.post("/place", authMiddlewares, placeOrder);
+router.get("/user-orders", authMiddlewares, getUserOrders);
 
 // Admin routes
 router.get("/all-orders", adminAuth, getAllOrders); // Get all orders

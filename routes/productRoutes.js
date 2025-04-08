@@ -1,23 +1,26 @@
 const express = require("express");
 const multer = require("multer");
-const {
-  uploadProduct,
-  getProductsByCategory,
-  getAllProducts,
-  addReview, getProductReviews
-} = require("../controllers/productController");
+const productController = require("../controllers/productController");
+const { authMiddlewares } = require("../middlewares/authMiddlewares");
 
 const router = express.Router();
 
 // Multer middleware for handling file uploads
-const upload = multer({ dest: "uploads/" }); // Temporary storage before Cloudinary
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 // Routes for product
-router.post("/upload", upload.single("image"), uploadProduct);
-router.get("/:genderCategory/:subCategory", getProductsByCategory);
-router.get("/all", getAllProducts);
-
-router.post("/:productId/reviews", authMiddleware, addReview); // Add review
-router.get("/:productId/reviews", getProductReviews); // Get reviews
+router.post("/upload", upload.single("image"), productController.uploadProduct);
+router.get(
+  "/:genderCategory/:subCategory",
+  productController.getProductsByCategory
+);
+router.get("/all", productController.getAllProducts);
+router.post(
+  "/:productId/reviews",
+  authMiddlewares,
+  productController.addReview
+); // Add review
+router.get("/:productId/reviews", productController.getProductReviews); // Get reviews
 
 module.exports = router;

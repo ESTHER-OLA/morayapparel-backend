@@ -1,7 +1,7 @@
 // authRoutes.js
 const express = require("express");
 const passport = require("../config/passport");
-const authMiddleware = require("../middlewares/authMiddlewares");
+const { authMiddlewares } = require("../middlewares/authMiddlewares");
 const {
   googleSignup,
   googleSignupCallback,
@@ -15,8 +15,9 @@ const {
   requestPasswordReset,
   resetPassword,
   saveProfile,
-  getProfile,
   updateProfile,
+  setNewPasswordForGoogleUser,
+  otpVerification,
 } = require("../controllers/userController");
 require("dotenv").config();
 
@@ -35,16 +36,16 @@ router.get("/google/login/callback", googleLoginCallback);
 
 // Standard authentication endpoints
 router.post("/signup", signup);
+router.post("/verify-otp", otpVerification);
 router.post("/login", login);
-router.get("/profile", authMiddleware, getProfile);
 
 //reset password
 router.post("/set-new-password", setNewPasswordForGoogleUser);
 router.post("/password-reset-request", requestPasswordReset);
 router.post("/reset-password", resetPassword);
 
-router.post("/profile", authMiddleware, saveProfile); // Save profile details
-router.get("/profile", authMiddleware, getProfile); // Get user profile
-router.put("/profile", authMiddleware, updateProfile); // Update profile details
+router.post("/profile", authMiddlewares, saveProfile); // Save profile details
+router.get("/profile", authMiddlewares, getProfile); // Get user profile
+router.put("/profile", authMiddlewares, updateProfile); // Update profile details
 
 module.exports = router;

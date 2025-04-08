@@ -1,6 +1,10 @@
 const express = require("express");
-const { adminSignup, adminLogin } = require("../controllers/adminController");
-const adminAuth = require("../middleware/adminAuth");
+const {
+  adminSignup,
+  adminLogin,
+  requestPasswordReset,
+} = require("../controllers/adminController");
+const adminAuth = require("../middlewares/adminAuth");
 
 const router = express.Router();
 
@@ -10,5 +14,7 @@ router.get("/dashboard", adminAuth, (req, res) => {
 
 router.post("/signup", adminSignup); // Admin signup
 router.post("/login", adminLogin); // Admin login
+// router.post("/verify-otp", verifyOTP);
+router.post("/request-password-reset", requestPasswordReset);
 
 module.exports = router;

@@ -4,13 +4,13 @@ const bodyParser = require("body-parser");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 const productRoutes = require("./routes/productRoutes");
-const cartRoutes = require("./routes/cartRoutes");
+const cartRoutes = require("./routes/cartsRoutes");
 const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
-const swaggerUi = require('swagger-ui-express');
-const swaggerJsdoc = require('swagger-jsdoc');
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./docs/swaggerDocs");
 
 dotenv.config();
 connectDB();
@@ -29,24 +29,26 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/payments", paymentRoutes);
 
-const options = {
-    definition: {
-      openapi: '3.0.0',
-      info: {
-        title: 'Your API Documentation',
-        version: '1.0.0',
-        description: 'Documentation for your backend endpoints',
-      },
-    },
-    // Path to the API docs (you can use JSDoc comments in your code)
-    apis: ['./routes/*.js', './controllers/*.js'], 
-  };
-  
-  const swaggerSpec = swaggerJsdoc(options);
-  
-  // Setup the swagger route
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// Swagger Setup (see Step 2 below for details)
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customCssUrl:
+      "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui.min.css",
+    customJs: [
+      "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui-bundle.min.js",
+      "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui-standalone-preset.min.js",
+    ],
+  })
+);
 
-// Start Server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Only call listen if running locally (development)
+if (process.env.NODE_ENV !== "production") {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () =>
+    console.log(`Server running on port ${PORT} in development mode`)
+  );
+}
+
+module.exports = app;
