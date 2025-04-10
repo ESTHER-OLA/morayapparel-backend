@@ -884,3 +884,194 @@
  *       500:
  *         description: Server error.
  */
+
+/**
+ * @swagger
+ * /api/auth/delete-account:
+ *   delete:
+ *     summary: Delete a user or admin account
+ *     description: Deletes a user or admin account based on first name, last name, user ID, and password.
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userFirstName
+ *               - userLastName
+ *               - userId
+ *               - password
+ *             properties:
+ *               userFirstName:
+ *                 type: string
+ *                 example: Esther
+ *                 description: First name of the user
+ *               userLastName:
+ *                 type: string
+ *                 example: Ola
+ *                 description: Last name of the user
+ *               userId:
+ *                 type: string
+ *                 example: 660f9d23e7812a6cf5e7f1cd
+ *                 description: Unique ID of the user
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: mySecret123!
+ *                 description: User's password for verification
+ *     responses:
+ *       200:
+ *         description: Account deleted successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Account deleted successfully
+ *       400:
+ *         description: Invalid input or user not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Invalid credentials or user not found
+ *       401:
+ *         description: Unauthorized - Incorrect password.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Password does not match
+ *       500:
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Server error
+ *                 error:
+ *                   type: string
+ *                   example: Detailed error message
+ */
+
+/**
+ * @swagger
+ * /api/admin/get-all-accounts:
+ *   get:
+ *     summary: Get all user and admin accounts
+ *     description: Fetches all user and admin accounts, listing them separately with their roles.
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []  # Ensure that the request includes a valid JWT token in the Authorization header
+ *     responses:
+ *       200:
+ *         description: Successfully fetched user and admin accounts.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Fetched users and admins successfully
+ *                 userAccounts:
+ *                   type: object
+ *                   properties:
+ *                     count:
+ *                       type: integer
+ *                       example: 5
+ *                       description: Total number of user accounts
+ *                     accounts:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                             example: 60d5f64b3b2f3c1e6c342fff
+ *                             description: Unique user ID
+ *                           firstName:
+ *                             type: string
+ *                             example: John
+ *                             description: First name of the user
+ *                           lastName:
+ *                             type: string
+ *                             example: Doe
+ *                             description: Last name of the user
+ *                           email:
+ *                             type: string
+ *                             example: johndoe@example.com
+ *                             description: Email of the user
+ *                           role:
+ *                             type: string
+ *                             example: user
+ *                             description: Role of the account (user/admin)
+ *                 adminAccounts:
+ *                   type: object
+ *                   properties:
+ *                     count:
+ *                       type: integer
+ *                       example: 2
+ *                       description: Total number of admin accounts
+ *                     accounts:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                             example: 60d5f64b3b2f3c1e6c342abc
+ *                             description: Unique admin ID
+ *                           firstName:
+ *                             type: string
+ *                             example: Admin
+ *                             description: First name of the admin
+ *                           lastName:
+ *                             type: string
+ *                             example: Admin
+ *                             description: Last name of the admin
+ *                           email:
+ *                             type: string
+ *                             example: admin@example.com
+ *                             description: Email of the admin
+ *                           role:
+ *                             type: string
+ *                             example: admin
+ *                             description: Role of the account (user/admin)
+ *       401:
+ *         description: Unauthorized. Admin authentication failed.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Unauthorized. Token is missing or invalid.
+ *       500:
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Server error
+ *                 error:
+ *                   type: string
+ *                   example: Detailed error message
+ */

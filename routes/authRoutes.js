@@ -19,6 +19,7 @@ const {
   setNewPasswordForGoogleUser,
   otpVerification,
 } = require("../controllers/userController");
+const { deleteAccount } = require("../controllers/accountController");
 require("dotenv").config();
 
 const router = express.Router();
@@ -47,5 +48,7 @@ router.post("/reset-password", resetPassword);
 router.post("/profile", authMiddlewares, saveProfile); // Save profile details
 router.get("/profile", authMiddlewares, getProfile); // Get user profile
 router.put("/profile", authMiddlewares, updateProfile); // Update profile details
+
+router.delete("/delete-account", deleteAccount); //delete account user & admin account
 
 module.exports = router;

@@ -155,3 +155,34 @@ exports.verifyOTP = async (req, res) => {
     res.status(500).json({ message: "Server error", error });
   }
 };
+
+exports.getAllUsersAndAdmins = async (req, res) => {
+  try {
+    const users = await User.find().select("-password");
+    const admins = await Admin.find().select("-password");
+
+    const labeledUsers = users.map((user) => ({
+      ...user.toObject(),
+      role: "user",
+    }));
+
+    const labeledAdmins = admins.map((admin) => ({
+      ...admin.toObject(),
+      role: "admin",
+    }));
+
+    res.status(200).json({
+      message: "Fetched users and admins successfully",
+      userAccounts: {
+        count: labeledUsers.length,
+        accounts: labeledUsers,
+      },
+      adminAccounts: {
+        count: labeledAdmins.length,
+        accounts: labeledAdmins,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
