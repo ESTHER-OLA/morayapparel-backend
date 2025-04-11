@@ -18,7 +18,12 @@ connectDB();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    credentials: true,
+  })
+);
 app.use(bodyParser.json());
 
 // Routes
@@ -45,7 +50,11 @@ app.use(
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV || "development"} mode`);
+  console.log(
+    `Server running on port ${PORT} in ${
+      process.env.NODE_ENV || "development"
+    } mode`
+  );
 });
 
 module.exports = app;
