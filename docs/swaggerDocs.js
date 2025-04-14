@@ -6,7 +6,7 @@ const swaggerOptions = {
     openapi: "3.0.0",
     servers: [
       {
-        url: "https://moray-apparel-backend.vercel.app", // This URL will be displayed in Swagger UI
+        url: "https://morayapparel-backend.onrender.com", // This URL will be displayed in Swagger UI
         description: "Production server",
       },
       {
