@@ -20,6 +20,7 @@ const sendEmailAlert = async (email, action, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: "Failed to send email alert", error });
+    res.status(500).json({ message: "Failed to send email alert", error: error.message });
   }
 };
 
