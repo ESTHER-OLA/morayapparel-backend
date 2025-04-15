@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const Otp = require("../models/Otp");
 const User = require("../models/User");
 const Admin = require("../models/Admin");
+const sendOTP = require("../utils/sendOTP");
 
 exports.verifyOtpAndCompleteSignup = async (req, res) => {
   try {
@@ -24,11 +25,9 @@ exports.verifyOtpAndCompleteSignup = async (req, res) => {
     const Model = otpRecord.isAdmin ? Admin : User;
     const existing = await Model.findOne({ email });
     if (existing)
-      return res
-        .status(400)
-        .json({
-          message: `${otpRecord.isAdmin ? "Admin" : "User"} already exists`,
-        });
+      return res.status(400).json({
+        message: `${otpRecord.isAdmin ? "Admin" : "User"} already exists`,
+      });
 
     const hashedPassword = await bcrypt.hash(otpRecord.password, 10);
 
@@ -43,13 +42,30 @@ exports.verifyOtpAndCompleteSignup = async (req, res) => {
     await newRecord.save();
     await Otp.deleteOne({ email });
 
-    res
-      .status(201)
-      .json({
-        message: `${otpRecord.isAdmin ? "Admin" : "User"} signup completed`,
-      });
+    res.status(201).json({
+      message: `${otpRecord.isAdmin ? "Admin" : "User"} signup completed`,
+    });
   } catch (error) {
     console.error("Unified OTP Verification Error:", error);
     res.status(500).json({ message: "Server error", error });
+  }
+};
+
+exports.sendOtpHandler = async (req, res) => {
+  try {
+    const { email, purpose, ...rest } = req.body;
+
+    if (!email || !purpose) {
+      return res
+        .status(400)
+        .json({ message: "Email and purpose are required" });
+    }
+
+    await sendOTP(email, purpose, rest);
+
+    res.status(200).json({ message: "OTP sent successfully" });
+  } catch (error) {
+    console.error("Send OTP Error:", error);
+    res.status(500).json({ message: "Failed to send OTP" });
   }
 };

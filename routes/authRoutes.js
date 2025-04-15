@@ -19,9 +19,12 @@ const {
   setNewPasswordForGoogleUser,
   // otpVerification,
 } = require("../controllers/userController");
-const { verifyOtpAndCompleteSignup } = require("../controllers/otpController");
 const { deleteAccount } = require("../controllers/accountController");
 const otpRateLimiter = require("../middlewares/otpRateLimiter");
+const {
+  sendOtpHandler,
+  verifyOtpAndCompleteSignup,
+} = require("../controllers/otpController");
 
 require("dotenv").config();
 
@@ -42,7 +45,7 @@ router.get("/google/login/callback", googleLoginCallback);
 router.post("/signup", signup);
 router.post("/login", login);
 // router.post("/verify-otp", otpVerification);
-router.post("/send-otp", otpRateLimiter, sendOtpController);
+router.post("/send-otp", otpRateLimiter, sendOtpHandler);
 router.post("/verify-otp", verifyOtpAndCompleteSignup);
 
 //reset password
