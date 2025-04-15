@@ -1,20 +1,31 @@
 // middleware/otpRateLimiter.js
-const redis = require("../config/redis");
+const OtpRateLimit = require("../models/OtpRateLimit");
 
 const otpRateLimiter = async (req, res, next) => {
   const { email } = req.body;
-  const key = `otp_request:${email}`;
 
-  const current = await redis.get(key);
+  if (!email) return res.status(400).json({ message: "Email is required" });
 
-  if (current && parseInt(current) >= 5) {
-    return res.status(429).json({ message: "Too many OTP requests. Try again later." });
+  try {
+    const record = await OtpRateLimit.findOne({ email });
+
+    if (record) {
+      if (record.count >= 5) {
+        return res
+          .status(429)
+          .json({ message: "Too many OTP requests. Try again later." });
+      }
+      record.count += 1;
+      await record.save();
+    } else {
+      await OtpRateLimit.create({ email });
+    }
+
+    next();
+  } catch (error) {
+    console.error("OTP Rate Limiter Error:", error);
+    res.status(500).json({ message: "Server error while checking OTP limit" });
   }
-
-  await redis.incr(key);
-  await redis.expire(key, 60 * 10); // 10-minute window
-
-  next();
 };
 
 module.exports = otpRateLimiter;
