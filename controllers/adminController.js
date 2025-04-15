@@ -16,8 +16,8 @@ const sendEmailAlert = async (email, action, res) => {
     html: `
     <p>An admin with email <strong>${email}</strong> is attempting to <strong>${action}</strong>.</p>
     <p>If this is authorized, please click:</p>
-    <a href="${process.env.FRONTEND_URL}/api/admin/approve-request?email=${email}" style="padding: 10px 15px; background-color: green; color: white; text-decoration: none;">APPROVE</a>
-    <a href="${process.env.FRONTEND_URL}/api/admin/reject-request?email=${email}" style="padding: 10px 15px; background-color: red; color: white; text-decoration: none; margin-left: 10px;">REJECT</a>
+    <a href="${process.env.CLIENT_URL}/api/admin/approve-request?email=${email}" style="padding: 10px 15px; background-color: green; color: white; text-decoration: none;">APPROVE</a>
+    <a href="${process.env.CLIENT_URL}/api/admin/reject-request?email=${email}" style="padding: 10px 15px; background-color: red; color: white; text-decoration: none; margin-left: 10px;">REJECT</a>
   `,
   };
 
