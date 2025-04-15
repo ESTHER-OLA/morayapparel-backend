@@ -5,26 +5,40 @@ const sendOTP = require("../utils/sendOTP");
 const transporter = require("../config/transporter");
 require("dotenv").config();
 
+const PendingApproval = require("../models/PendingApproval");
+
 // Function to send email alerts
 const sendEmailAlert = async (email, action, res) => {
   const mailOptions = {
     from: process.env.BUSINESS_SUPPORT_EMAIL,
     to: process.env.BUSINESS_SUPPORT_EMAIL, // Send to business support
     subject: "Admin Secret Key Validation Request",
-    text: `An admin is attempting to ${action}. If this is authorized, respond with "APPROVED". Otherwise, respond with "REJECTED".`,
+    html: `
+    <p>An admin with email <strong>${email}</strong> is attempting to <strong>${action}</strong>.</p>
+    <p>If this is authorized, please click:</p>
+    <a href="${process.env.FRONTEND_URL}/api/admin/approve-request?email=${email}" style="padding: 10px 15px; background-color: green; color: white; text-decoration: none;">APPROVE</a>
+    <a href="${process.env.FRONTEND_URL}/api/admin/reject-request?email=${email}" style="padding: 10px 15px; background-color: red; color: white; text-decoration: none; margin-left: 10px;">REJECT</a>
+  `,
   };
 
   try {
     await transporter.sendMail(mailOptions);
+    // Save pending approval
+    await PendingApproval.findOneAndUpdate(
+      { email },
+      { email, action, status: "pending" },
+      { upsert: true, new: true }
+    );
+
     res.status(401).json({
-      message: "Secret key validation pending. Check business support email.",
+      message: "Secret key validation pending. Await business approval.",
     });
   } catch (error) {
-    console.error("Email alert error:", error); // Add this line to log real error
+    console.error("Email alert error:", error);
     res.status(500).json({
       message: "Failed to send email alert",
       error: error?.message || error.toString(),
-    });    
+    });
   }
 };
 
@@ -187,6 +201,62 @@ exports.getAllUsersAndAdmins = async (req, res) => {
         accounts: labeledAdmins,
       },
     });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+exports.approveAdminRequest = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const approval = await PendingApproval.findOneAndUpdate(
+      { email },
+      { status: "approved" },
+      { new: true }
+    );
+
+    if (!approval) {
+      return res.status(404).json({ message: "Pending request not found" });
+    }
+
+    res.status(200).json({ message: "Admin request approved successfully." });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+exports.getApprovalStatus = async (req, res) => {
+  try {
+    const { email } = req.query;
+
+    const approval = await PendingApproval.findOne({ email });
+
+    if (!approval) {
+      return res.status(404).json({ message: "No approval found" });
+    }
+
+    res.status(200).json({ status: approval.status });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+exports.rejectAdminRequest = async (req, res) => {
+  try {
+    const { email } = req.query;
+
+    const rejection = await PendingApproval.findOneAndUpdate(
+      { email },
+      { status: "rejected" },
+      { new: true }
+    );
+
+    if (!rejection) {
+      return res.status(404).json({ message: "Pending request not found" });
+    }
+
+    res.status(200).json({ message: "Admin request rejected successfully." });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }

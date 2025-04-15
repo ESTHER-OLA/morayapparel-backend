@@ -4,6 +4,9 @@ const {
   adminLogin,
   requestPasswordReset,
   getAllUsersAndAdmins,
+  approveAdminRequest,
+  getApprovalStatus,
+  rejectAdminRequest,
 } = require("../controllers/adminController");
 const adminAuth = require("../middlewares/adminAuth");
 
@@ -19,5 +22,10 @@ router.post("/login", adminLogin); // Admin login
 router.post("/request-password-reset", requestPasswordReset);
 // Get all users and admins (Accessible only by admin)
 router.get("/get-all-accounts", adminAuth, getAllUsersAndAdmins);
+
+// 🔥 New routes for email approval
+router.get("/approve-request", approveAdminRequest);
+router.get("/reject-request", rejectAdminRequest);
+router.get("/approval-status", getApprovalStatus); // Optional: check approval state
 
 module.exports = router;
