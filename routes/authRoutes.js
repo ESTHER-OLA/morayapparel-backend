@@ -21,7 +21,7 @@ const {
 } = require("../controllers/userController");
 const { verifyOtpAndCompleteSignup } = require("../controllers/otpController");
 const { deleteAccount } = require("../controllers/accountController");
-const otpRateLimiter = require("../middleware/otpRateLimiter");
+const otpRateLimiter = require("../middlewares/otpRateLimiter");
 
 require("dotenv").config();
 
