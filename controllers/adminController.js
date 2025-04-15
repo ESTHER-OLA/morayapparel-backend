@@ -2,6 +2,7 @@ const Admin = require("../models/Admin");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const sendOTP = require("../utils/sendOTP");
+const transporter = require("../config/transporter");
 require("dotenv").config();
 
 // Function to send email alerts
@@ -19,8 +20,11 @@ const sendEmailAlert = async (email, action, res) => {
       message: "Secret key validation pending. Check business support email.",
     });
   } catch (error) {
-    res.status(500).json({ message: "Failed to send email alert", error });
-    res.status(500).json({ message: "Failed to send email alert", error: error.message });
+    console.error("Email alert error:", error); // Add this line to log real error
+    res.status(500).json({
+      message: "Failed to send email alert",
+      error: error?.message || error.toString(),
+    });    
   }
 };
 
