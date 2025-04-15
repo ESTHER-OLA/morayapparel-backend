@@ -3,9 +3,9 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const sendOTP = require("../utils/sendOTP");
 const transporter = require("../config/transporter");
-require("dotenv").config();
-
+// const Otp = require("../models/Otp");
 const PendingApproval = require("../models/PendingApproval");
+require("dotenv").config();
 
 // Function to send email alerts
 const sendEmailAlert = async (email, action, res) => {
@@ -45,20 +45,49 @@ const sendEmailAlert = async (email, action, res) => {
 // Admin Signup - Step 1: Validate and send OTP
 exports.adminSignup = async (req, res) => {
   try {
-    const { email, secretKey } = req.body;
+    const { email, secretKey, firstName, lastName, password } = req.body;
+
+    // Check if the admin is already registered
+    const existingAdmin = await Admin.findOne({ email });
+    if (existingAdmin) {
+      return res.status(400).json({ message: "Admin already exists" });
+    }
 
     // Secret key validation
     if (secretKey !== process.env.SECRET_KEY) {
       return sendEmailAlert(email, "signup", res);
     }
 
-    const existingAdmin = await Admin.findOne({ email });
-    if (existingAdmin) {
-      return res.status(400).json({ message: "Admin already exists" });
+    // Check approval status in PendingApproval
+    const approval = await PendingApproval.findOne({ email });
+
+    if (!approval || approval.status === "pending") {
+      return res.status(403).json({
+        message: "Signup request is pending approval. Please wait.",
+      });
     }
 
-    // Use existing sendOTP utility for sending OTP
-    await sendOTP(email, "signup");
+    if (approval.status === "rejected") {
+      return res.status(403).json({
+        message: "Signup request was rejected. Contact support if needed.",
+      });
+    }
+
+    if (approval.status !== "approved") {
+      return res.status(403).json({
+        message: "Signup not allowed. Approval required.",
+      });
+    }
+
+    // Send OTP and store data
+    await sendOTP(email, "signup", {
+      firstName,
+      lastName,
+      email,
+      password,
+      isAdmin: true,
+    });
+
     res.status(200).json({
       message: "OTP sent to email. Please verify to complete signup.",
     });
@@ -120,60 +149,91 @@ exports.requestPasswordReset = async (req, res) => {
   }
 };
 
-exports.verifyOTP = async (req, res) => {
-  try {
-    const { email, otp, newPassword } = req.body;
+// exports.verifyOTP = async (req, res) => {
+//   try {
+//     const { email, otp, newPassword } = req.body;
 
-    const record = otpStore[email];
-    if (!record)
-      return res.status(400).json({ message: "No OTP found. Try again." });
+//     const otpRecord = await Otp.findOne({ email }).sort({ createdAt: -1 });
 
-    if (Date.now() > record.expiresAt) {
-      delete otpStore[email];
-      return res.status(400).json({ message: "OTP expired. Try again." });
-    }
+//     if (!otpRecord)
+//       return res.status(400).json({ message: "No OTP found. Try again." });
 
-    if (otp !== record.otp) {
-      return res.status(400).json({ message: "Invalid OTP." });
-    }
+//     if (new Date() > otpRecord.expiresAt) {
+//       await Otp.deleteOne({ _id: otpRecord._id });
+//       return res.status(400).json({ message: "OTP expired. Try again." });
+//     }
 
-    const { action, data } = record;
+//     const isMatch = await bcrypt.compare(otp, otpRecord.otp);
+//     if (!isMatch)
+//       return res.status(400).json({ message: "Invalid OTP." });
 
-    if (action === "signup") {
-      const hashedPassword = await bcrypt.hash(data.password, 10);
-      const newAdmin = new Admin({
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
-        password: hashedPassword,
-      });
-      await newAdmin.save();
-      delete otpStore[email];
-      return res
-        .status(201)
-        .json({ message: "Signup complete. You can now login." });
-    }
+//     // Handle signup
+//     if (otpRecord.purpose === "signup") {
+//       const { firstName, lastName, password } = otpRecord.signupData || {};
 
-    if (action === "reset-password") {
-      if (!newPassword || newPassword.length < 6) {
-        return res.status(400).json({
-          message:
-            "New password is required and must be at least 6 characters.",
-        });
-      }
+//       if (!otpRecord.isAdmin) {
+//         // For users
+//         const existingUser = await User.findOne({ email });
+//         if (existingUser)
+//           return res.status(400).json({ message: "User already exists." });
 
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
-      await Admin.findByIdAndUpdate(data.adminId, { password: hashedPassword });
+//         const hashedPassword = await bcrypt.hash(password, 10);
+//         const newUser = new User({
+//           firstName,
+//           lastName,
+//           email,
+//           password: hashedPassword,
+//         });
+//         await newUser.save();
+//       } else {
+//         // For admins
+//         const existingAdmin = await Admin.findOne({ email });
+//         if (existingAdmin)
+//           return res.status(400).json({ message: "Admin already exists." });
 
-      delete otpStore[email];
-      return res.status(200).json({ message: "Password reset successful." });
-    }
+//         const hashedPassword = await bcrypt.hash(password, 10);
+//         const newAdmin = new Admin({
+//           firstName,
+//           lastName,
+//           email,
+//           password: hashedPassword,
+//         });
+//         await newAdmin.save();
+//       }
 
-    res.status(400).json({ message: "Invalid action" });
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error });
-  }
-};
+//       await Otp.deleteOne({ _id: otpRecord._id });
+
+//       return res.status(201).json({
+//         message: "Signup complete. You can now login.",
+//       });
+//     }
+
+//     // Handle password reset
+//     if (otpRecord.purpose === "reset-password") {
+//       if (!newPassword || newPassword.length < 6) {
+//         return res.status(400).json({
+//           message: "New password is required and must be at least 6 characters.",
+//         });
+//       }
+
+//       const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+//       if (otpRecord.isAdmin) {
+//         await Admin.findOneAndUpdate({ email }, { password: hashedPassword });
+//       } else {
+//         await User.findOneAndUpdate({ email }, { password: hashedPassword });
+//       }
+
+//       await Otp.deleteOne({ _id: otpRecord._id });
+
+//       return res.status(200).json({ message: "Password reset successful." });
+//     }
+
+//     res.status(400).json({ message: "Invalid action." });
+//   } catch (error) {
+//     res.status(500).json({ message: "Server error", error });
+//   }
+// };
 
 exports.getAllUsersAndAdmins = async (req, res) => {
   try {

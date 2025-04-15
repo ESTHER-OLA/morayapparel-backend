@@ -2,37 +2,29 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const sendOTP = require("../utils/sendOTP");
+// const OTP = require("../models/UserOtp");
 require("dotenv").config();
 
-// Signup with OTP
+// Updated user signup
 exports.signup = async (req, res) => {
   try {
     const { firstName, lastName, email, password } = req.body;
 
     // Check if user already exists
-    let user = await User.findOne({ email });
-    if (user) {
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
       return res
         .status(400)
         .json({ message: "User already exists. Please login instead." });
     }
 
-    // Hash the password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Save user with OTP (pending verification)
-    user = new User({
+    // Send OTP with data saved in OTP model
+    await sendOTP(email, "signup", {
       firstName,
       lastName,
-      email,
-      password: hashedPassword,
-      isVerified: false, // Mark as unverified
+      password,
+      isAdmin: false,
     });
-    await user.save();
-
-    // Send OTP via email
-    await sendOTP(email, "signup");
 
     res
       .status(200)
@@ -42,31 +34,53 @@ exports.signup = async (req, res) => {
   }
 };
 
-// Verify OTP and complete signup
-exports.otpVerification = async (req, res) => {
-  try {
-    const { email, otp, purpose } = req.body;
-    const user = await User.findOne({ email });
+// exports.otpVerification = async (req, res) => {
+//   try {
+//     const { email, otp, purpose } = req.body;
 
-    if (!user) return res.status(400).json({ message: "User not found" });
-    if (user.otpPurpose !== purpose) return res.status(400).json({ message: "OTP purpose mismatch" });
-    if (user.otpExpires < Date.now()) return res.status(400).json({ message: "OTP expired" });
+//     // Fetch OTP record
+//     const otpRecord = await OTP.findOne({ email });
+//     if (!otpRecord) return res.status(400).json({ message: "OTP not found" });
 
-    const isMatch = await bcrypt.compare(otp, user.otpCode);
-    if (!isMatch) return res.status(400).json({ message: "Invalid OTP" });
+//     if (otpRecord.otpPurpose !== purpose)
+//       return res.status(400).json({ message: "OTP purpose mismatch" });
 
-    if (purpose === "signup") user.isVerified = true;
+//     if (otpRecord.otpExpires < Date.now())
+//       return res.status(400).json({ message: "OTP expired" });
 
-    user.otpCode = undefined;
-    user.otpExpires = undefined;
-    user.otpPurpose = undefined;
-    await user.save();
+//     const isMatch = await bcrypt.compare(otp, otpRecord.otpCode);
+//     if (!isMatch) return res.status(400).json({ message: "Invalid OTP" });
 
-    res.status(200).json({ message: `${purpose} verified successfully` });
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error });
-  }
-};
+//     // Prevent duplicate user
+//     const existingUser = await User.findOne({ email });
+//     if (existingUser)
+//       return res.status(400).json({ message: "User already exists" });
+
+//     // Hash the password
+//     const salt = await bcrypt.genSalt(10);
+//     const hashedPassword = await bcrypt.hash(otpRecord.password, salt);
+
+//     // Create the user
+//     const newUser = new User({
+//       firstName: otpRecord.firstName,
+//       lastName: otpRecord.lastName,
+//       email,
+//       password: hashedPassword,
+//       isVerified: true,
+//       isAdmin: otpRecord.isAdmin || false,
+//     });
+
+//     await newUser.save();
+
+//     // Clean up OTP record
+//     await OTP.deleteOne({ email });
+
+//     res.status(201).json({ message: "Signup completed successfully" });
+//   } catch (error) {
+//     console.error("OTP Verification Error:", error);
+//     res.status(500).json({ message: "Server error", error });
+//   }
+// };
 
 // Standard login controller
 exports.login = async (req, res) => {
@@ -133,8 +147,10 @@ exports.resetPassword = async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "User not found" });
 
-    if (user.otpPurpose !== "reset-password") return res.status(400).json({ message: "Invalid OTP purpose" });
-    if (user.otpExpires < Date.now()) return res.status(400).json({ message: "OTP expired" });
+    if (user.otpPurpose !== "reset-password")
+      return res.status(400).json({ message: "Invalid OTP purpose" });
+    if (user.otpExpires < Date.now())
+      return res.status(400).json({ message: "OTP expired" });
 
     const isMatch = await bcrypt.compare(otp, user.otpCode);
     if (!isMatch) return res.status(400).json({ message: "Invalid OTP" });

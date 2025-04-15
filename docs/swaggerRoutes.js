@@ -48,7 +48,7 @@
  * @swagger
  * /api/auth/verify-otp:
  *   post:
- *     summary: Verify OTP to complete user signup and reset-password
+ *     summary: Verify OTP to complete user or admin signup, or reset password.
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -59,16 +59,68 @@
  *             required:
  *               - email
  *               - otp
+ *               - purpose
  *             properties:
  *               email:
  *                 type: string
+ *                 example: user@example.com
  *               otp:
  *                 type: string
+ *                 example: "123456"
+ *               purpose:
+ *                 type: string
+ *                 enum: [signup, reset-password]
+ *                 example: signup
  *     responses:
  *       200:
- *         description: Signup successful. You can now log in.
+ *         description: OTP verification successful.
  *       400:
- *         description: Invalid OTP or OTP expired
+ *         description: Invalid OTP, expired OTP, or other validation issue.
+ *       500:
+ *         description: Server error
+ */
+
+/**
+ * @swagger
+ * /api/auth/send-otp:
+ *   post:
+ *     summary: Send OTP to user or admin email for signup or password reset.
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - purpose
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: user@example.com
+ *               purpose:
+ *                 type: string
+ *                 enum: [signup, reset-password]
+ *                 example: signup
+ *               isAdmin:
+ *                 type: boolean
+ *                 description: Set to true for admin OTP requests.
+ *                 example: false
+ *               firstName:
+ *                 type: string
+ *                 example: John
+ *               lastName:
+ *                 type: string
+ *                 example: Doe
+ *               password:
+ *                 type: string
+ *                 example: Password123!
+ *     responses:
+ *       200:
+ *         description: OTP sent successfully
+ *       400:
+ *         description: Invalid input or request
  *       500:
  *         description: Server error
  */
