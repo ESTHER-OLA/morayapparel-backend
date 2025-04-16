@@ -47,6 +47,7 @@ router.post("/login", login);
 // router.post("/verify-otp", otpVerification);
 router.post("/send-otp", otpRateLimiter, sendOtpHandler);
 router.post("/verify-otp", verifyOtpAndCompleteSignup);
+router.post("/resend-otp", otpRateLimiter, sendOtpHandler);
 
 //reset password
 router.post("/set-new-password", setNewPasswordForGoogleUser);

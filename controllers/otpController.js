@@ -61,9 +61,30 @@ exports.sendOtpHandler = async (req, res) => {
         .json({ message: "Email and purpose are required" });
     }
 
+    const existingOtp = await Otp.findOne({ email, otpPurpose: purpose });
+
+    // Remove previous OTP if it exists
+    if (existingOtp) {
+      await Otp.deleteOne({ _id: existingOtp._id });
+    }
+
+    // Send new OTP
     await sendOTP(email, purpose, rest);
 
-    res.status(200).json({ message: "OTP sent successfully" });
+    // Rate limit tracking (optional feedback)
+    const rateRecord = await OtpRateLimit.findOne({ email });
+    const remainingAttempts = rateRecord
+      ? Math.max(0, 5 - rateRecord.count)
+      : 4;
+
+    const responseMessage = existingOtp
+      ? "New OTP has been resent successfully"
+      : "OTP sent successfully";
+
+    res.status(200).json({
+      message: responseMessage,
+      attemptsLeft: remainingAttempts,
+    });
   } catch (error) {
     console.error("Send OTP Error:", error);
     res.status(500).json({ message: "Failed to send OTP" });

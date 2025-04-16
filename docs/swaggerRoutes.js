@@ -127,6 +127,51 @@
 
 /**
  * @swagger
+ * /api/auth/resend-otp:
+ *   post:
+ *     summary: Resend OTP to user or admin email for signup or password reset.
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - purpose
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: user@example.com
+ *               purpose:
+ *                 type: string
+ *                 enum: [signup, reset-password]
+ *                 example: signup
+ *               isAdmin:
+ *                 type: boolean
+ *                 description: Set to true for admin OTP requests.
+ *                 example: false
+ *               firstName:
+ *                 type: string
+ *                 example: John
+ *               lastName:
+ *                 type: string
+ *                 example: Doe
+ *               password:
+ *                 type: string
+ *                 example: Password123!
+ *     responses:
+ *       200:
+ *         description: New OTP has been resent successfully
+ *       400:
+ *         description: Invalid input or request
+ *       500:
+ *         description: Server error
+ */
+
+/**
+ * @swagger
  * /api/auth/login:
  *   post:
  *     summary: Login an existing verified user
