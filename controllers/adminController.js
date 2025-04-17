@@ -30,8 +30,9 @@ const sendEmailAlert = async (email, action, res) => {
       { upsert: true, new: true }
     );
 
-    res.status(401).json({
+    res.status(201).json({
       message: "Secret key validation pending. Await business approval.",
+      pendingApproval: true,
     });
   } catch (error) {
     console.error("Email alert error:", error);
@@ -47,39 +48,49 @@ exports.adminSignup = async (req, res) => {
   try {
     const { email, secretKey, firstName, lastName, password } = req.body;
 
-    // Check if the admin is already registered
     const existingAdmin = await Admin.findOne({ email });
     if (existingAdmin) {
       return res.status(400).json({ message: "Admin already exists" });
     }
 
-    // Secret key validation
-    if (secretKey !== process.env.SECRET_KEY) {
-      return sendEmailAlert(email, "signup", res);
-    }
-
-    // Check approval status in PendingApproval
+    // Check for approval record
     const approval = await PendingApproval.findOne({ email });
 
-    if (!approval || approval.status === "pending") {
+    // CASE 1: No approval yet and invalid secret key
+    if (!approval && secretKey !== process.env.SECRET_KEY) {
+      await sendEmailAlert(email, "signup", res);
+      return; // stop here after sending alert
+    }
+
+    // CASE 2: If approval exists and status is pending
+    if (approval && approval.status === "pending") {
       return res.status(403).json({
         message: "Signup request is pending approval. Please wait.",
       });
     }
 
-    if (approval.status === "rejected") {
+    // CASE 3: If approval exists and status is rejected
+    if (approval && approval.status === "rejected") {
       return res.status(403).json({
         message: "Signup request was rejected. Contact support if needed.",
       });
     }
 
-    if (approval.status !== "approved") {
+    // CASE 4: Not approved yet
+    if (approval && approval.status !== "approved") {
       return res.status(403).json({
         message: "Signup not allowed. Approval required.",
       });
     }
 
-    // Send OTP and store data
+    // If secretKey is still wrong at this point, prevent further
+    if (secretKey !== process.env.SECRET_KEY) {
+      return res.status(403).json({
+        message: "Invalid secret key.",
+      });
+    }
+
+    // At this point everything is valid, proceed to send OTP
     await sendOTP(email, "signup", {
       firstName,
       lastName,
@@ -92,9 +103,62 @@ exports.adminSignup = async (req, res) => {
       message: "OTP sent to email. Please verify to complete signup.",
     });
   } catch (error) {
+    console.error("Signup error:", error);
     res.status(500).json({ message: "Server error", error });
   }
 };
+// exports.adminSignup = async (req, res) => {
+//   try {
+//     const { email, secretKey, firstName, lastName, password } = req.body;
+
+//     // Check if the admin is already registered
+//     const existingAdmin = await Admin.findOne({ email });
+//     if (existingAdmin) {
+//       return res.status(400).json({ message: "Admin already exists" });
+//     }
+
+//     // Secret key validation
+//     if (secretKey !== process.env.SECRET_KEY) {
+//       return sendEmailAlert(email, "signup", res);
+//     }
+
+//     // Check approval status in PendingApproval
+//     const approval = await PendingApproval.findOne({ email });
+
+//     if (!approval || approval.status === "pending") {
+//       return res.status(403).json({
+//         message: "Signup request is pending approval. Please wait.",
+//       });
+//     }
+
+//     if (approval.status === "rejected") {
+//       return res.status(403).json({
+//         message: "Signup request was rejected. Contact support if needed.",
+//       });
+//     }
+
+//     if (approval.status !== "approved") {
+//       return res.status(403).json({
+//         message: "Signup not allowed. Approval required.",
+//       });
+//     }
+
+//     // Send OTP and store data
+//     await sendOTP(email, "signup", {
+//       firstName,
+//       lastName,
+//       email,
+//       password,
+//       isAdmin: true,
+//     });
+
+//     res.status(200).json({
+//       message: "OTP sent to email. Please verify to complete signup.",
+//     });
+//   } catch (error) {
+//     res.status(500).json({ message: "Server error", error });
+//   }
+// };
 
 // Admin Login - Without OTP, only secretKey validation
 exports.adminLogin = async (req, res) => {
@@ -148,92 +212,6 @@ exports.requestPasswordReset = async (req, res) => {
     res.status(500).json({ message: "Server error", error });
   }
 };
-
-// exports.verifyOTP = async (req, res) => {
-//   try {
-//     const { email, otp, newPassword } = req.body;
-
-//     const otpRecord = await Otp.findOne({ email }).sort({ createdAt: -1 });
-
-//     if (!otpRecord)
-//       return res.status(400).json({ message: "No OTP found. Try again." });
-
-//     if (new Date() > otpRecord.expiresAt) {
-//       await Otp.deleteOne({ _id: otpRecord._id });
-//       return res.status(400).json({ message: "OTP expired. Try again." });
-//     }
-
-//     const isMatch = await bcrypt.compare(otp, otpRecord.otp);
-//     if (!isMatch)
-//       return res.status(400).json({ message: "Invalid OTP." });
-
-//     // Handle signup
-//     if (otpRecord.purpose === "signup") {
-//       const { firstName, lastName, password } = otpRecord.signupData || {};
-
-//       if (!otpRecord.isAdmin) {
-//         // For users
-//         const existingUser = await User.findOne({ email });
-//         if (existingUser)
-//           return res.status(400).json({ message: "User already exists." });
-
-//         const hashedPassword = await bcrypt.hash(password, 10);
-//         const newUser = new User({
-//           firstName,
-//           lastName,
-//           email,
-//           password: hashedPassword,
-//         });
-//         await newUser.save();
-//       } else {
-//         // For admins
-//         const existingAdmin = await Admin.findOne({ email });
-//         if (existingAdmin)
-//           return res.status(400).json({ message: "Admin already exists." });
-
-//         const hashedPassword = await bcrypt.hash(password, 10);
-//         const newAdmin = new Admin({
-//           firstName,
-//           lastName,
-//           email,
-//           password: hashedPassword,
-//         });
-//         await newAdmin.save();
-//       }
-
-//       await Otp.deleteOne({ _id: otpRecord._id });
-
-//       return res.status(201).json({
-//         message: "Signup complete. You can now login.",
-//       });
-//     }
-
-//     // Handle password reset
-//     if (otpRecord.purpose === "reset-password") {
-//       if (!newPassword || newPassword.length < 6) {
-//         return res.status(400).json({
-//           message: "New password is required and must be at least 6 characters.",
-//         });
-//       }
-
-//       const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-//       if (otpRecord.isAdmin) {
-//         await Admin.findOneAndUpdate({ email }, { password: hashedPassword });
-//       } else {
-//         await User.findOneAndUpdate({ email }, { password: hashedPassword });
-//       }
-
-//       await Otp.deleteOne({ _id: otpRecord._id });
-
-//       return res.status(200).json({ message: "Password reset successful." });
-//     }
-
-//     res.status(400).json({ message: "Invalid action." });
-//   } catch (error) {
-//     res.status(500).json({ message: "Server error", error });
-//   }
-// };
 
 exports.getAllUsersAndAdmins = async (req, res) => {
   try {
