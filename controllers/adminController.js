@@ -198,13 +198,30 @@ exports.approveAdminRequest = async (req, res) => {
     const { email } = req.query;
 
     const approval = await PendingApproval.findOneAndUpdate(
-      { email },
-      { status: "approved" },
-      { new: true }
+      {
+        email,
+        action,
+        status: "pending",
+        signupData: {
+          firstName,
+          lastName,
+          email,
+          password,
+        },
+      },
+      { upsert: true, new: true }
     );
 
     if (!approval) {
       return res.status(404).json({ message: "Pending request not found" });
+    }
+
+    const { signupData } = approval;
+    if (signupData) {
+      await sendOTP(email, "signup", {
+        ...signupData,
+        isAdmin: true,
+      });
     }
 
     res
