@@ -195,7 +195,7 @@ exports.getAllUsersAndAdmins = async (req, res) => {
 
 exports.approveAdminRequest = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email } = req.query;
 
     const approval = await PendingApproval.findOneAndUpdate(
       { email },
@@ -207,9 +207,11 @@ exports.approveAdminRequest = async (req, res) => {
       return res.status(404).json({ message: "Pending request not found" });
     }
 
-    res.status(200).json({ message: "Admin request approved successfully." });
+    res
+      .status(200)
+      .send(`<h3>Admin request for ${email} approved successfully.</h3>`);
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).send(`<h3>Server error: ${error.message}</h3>`);
   }
 };
 
