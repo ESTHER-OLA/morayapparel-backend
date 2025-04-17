@@ -369,6 +369,100 @@
 
 /**
  * @swagger
+ * /api/admin/approve-request:
+ *   get:
+ *     summary: Approve an admin signup or login request
+ *     description: Business support clicks this link in the email to approve an admin's secret key validation request.
+ *     parameters:
+ *       - in: query
+ *         name: email
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: email
+ *         description: Email of the admin requesting approval
+ *     responses:
+ *       200:
+ *         description: Admin request approved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Admin request approved successfully.
+ *       404:
+ *         description: Pending request not found
+ *       500:
+ *         description: Server error
+ */
+
+/**
+ * @swagger
+ * /api/admin/reject-request:
+ *   get:
+ *     summary: Reject an admin signup or login request
+ *     description: Business support clicks this link in the email to reject an admin's secret key validation request.
+ *     parameters:
+ *       - in: query
+ *         name: email
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: email
+ *         description: Email of the admin whose request is being rejected
+ *     responses:
+ *       200:
+ *         description: Admin request rejected successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Admin request rejected successfully.
+ *       404:
+ *         description: Pending request not found
+ *       500:
+ *         description: Server error
+ */
+
+/**
+ * @swagger
+ * /api/admin/approval-status:
+ *   get:
+ *     summary: Get approval status of admin signup or login
+ *     description: Frontend polls this route to check if an admin's secret key request has been approved or rejected.
+ *     parameters:
+ *       - in: query
+ *         name: email
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: email
+ *         description: Email of the admin to check approval status for
+ *     responses:
+ *       200:
+ *         description: Approval status returned
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: approved
+ *                   enum: [approved, pending, rejected]
+ *       404:
+ *         description: No approval found
+ *       500:
+ *         description: Server error
+ */
+
+/**
+ * @swagger
  * /api/user/profile:
  *   get:
  *     summary: Get user profile

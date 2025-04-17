@@ -64,8 +64,9 @@ exports.adminSignup = async (req, res) => {
 
     // CASE 2: If approval exists and status is pending
     if (approval && approval.status === "pending") {
-      return res.status(403).json({
+      return res.status(200).json({
         message: "Signup request is pending approval. Please wait.",
+        pendingApproval: true,
       });
     }
 
@@ -107,58 +108,6 @@ exports.adminSignup = async (req, res) => {
     res.status(500).json({ message: "Server error", error });
   }
 };
-// exports.adminSignup = async (req, res) => {
-//   try {
-//     const { email, secretKey, firstName, lastName, password } = req.body;
-
-//     // Check if the admin is already registered
-//     const existingAdmin = await Admin.findOne({ email });
-//     if (existingAdmin) {
-//       return res.status(400).json({ message: "Admin already exists" });
-//     }
-
-//     // Secret key validation
-//     if (secretKey !== process.env.SECRET_KEY) {
-//       return sendEmailAlert(email, "signup", res);
-//     }
-
-//     // Check approval status in PendingApproval
-//     const approval = await PendingApproval.findOne({ email });
-
-//     if (!approval || approval.status === "pending") {
-//       return res.status(403).json({
-//         message: "Signup request is pending approval. Please wait.",
-//       });
-//     }
-
-//     if (approval.status === "rejected") {
-//       return res.status(403).json({
-//         message: "Signup request was rejected. Contact support if needed.",
-//       });
-//     }
-
-//     if (approval.status !== "approved") {
-//       return res.status(403).json({
-//         message: "Signup not allowed. Approval required.",
-//       });
-//     }
-
-//     // Send OTP and store data
-//     await sendOTP(email, "signup", {
-//       firstName,
-//       lastName,
-//       email,
-//       password,
-//       isAdmin: true,
-//     });
-
-//     res.status(200).json({
-//       message: "OTP sent to email. Please verify to complete signup.",
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: "Server error", error });
-//   }
-// };
 
 // Admin Login - Without OTP, only secretKey validation
 exports.adminLogin = async (req, res) => {
