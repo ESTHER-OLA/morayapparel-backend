@@ -29,11 +29,20 @@ exports.verifyOtpAndCompleteSignup = async (req, res) => {
         message: `${otpRecord.isAdmin ? "Admin" : "User"} already exists`,
       });
 
-    const hashedPassword = await bcrypt.hash(otpRecord.password, 10);
+    // Access signupData correctly
+    const { firstName, lastName, password } = otpRecord.signupData || {};
+
+    if (!firstName || !lastName || !password) {
+      return res
+        .status(400)
+        .json({ message: "Incomplete signup data in OTP record" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const newRecord = new Model({
-      firstName: otpRecord.firstName,
-      lastName: otpRecord.lastName,
+      firstName,
+      lastName,
       email,
       password: hashedPassword,
       isVerified: true,
