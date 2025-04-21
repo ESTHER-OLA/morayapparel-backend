@@ -23,12 +23,15 @@ const sendEmailAlert = async (email, action, res, signupData) => {
 
   try {
     await transporter.sendMail(mailOptions);
-    // Save pending approval
-    await PendingApproval.findOneAndUpdate(
-      { email },
-      { email, action, status: "pending", signupData },
-      { upsert: true, new: true }
-    );
+
+      // Only save pending approval if signupData exists
+      if (signupData) {
+        await PendingApproval.findOneAndUpdate(
+          { email },
+          { email, action, status: "pending", signupData },
+          { upsert: true, new: true }
+        );
+      }
 
     res.status(201).json({
       message: "Secret key validation pending. Await business approval.",
