@@ -8,7 +8,7 @@ const PendingApproval = require("../models/PendingApproval");
 require("dotenv").config();
 
 // Function to send email alerts
-const sendEmailAlert = async (email, action, res) => {
+const sendEmailAlert = async (email, action, res, signupData) => {
   const mailOptions = {
     from: process.env.BUSINESS_SUPPORT_EMAIL,
     to: process.env.BUSINESS_SUPPORT_EMAIL, // Send to business support
