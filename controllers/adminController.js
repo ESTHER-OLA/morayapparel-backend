@@ -26,7 +26,7 @@ const sendEmailAlert = async (email, action, res) => {
     // Save pending approval
     await PendingApproval.findOneAndUpdate(
       { email },
-      { email, action, status: "pending" },
+      { email, action, status: "pending", signupData },
       { upsert: true, new: true }
     );
 
@@ -58,7 +58,12 @@ exports.adminSignup = async (req, res) => {
 
     // CASE 1: No approval yet and invalid secret key
     if (!approval && secretKey !== process.env.SECRET_KEY) {
-      await sendEmailAlert(email, "signup", res);
+      await sendEmailAlert(email, "signup", res, {
+        firstName,
+        lastName,
+        email,
+        password,
+      });
       return; // stop here after sending alert
     }
 
